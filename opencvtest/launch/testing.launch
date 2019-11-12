@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="opencvtest" type="msg2cv2" name="test_node_bonkers" output="screen">
+	</node>
+</launch>
+
