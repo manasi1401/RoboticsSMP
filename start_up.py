@@ -37,16 +37,16 @@ def bilateral_filtering(iframe):
         (iframe.shape[1], iframe.shape[0]),
     ]
 
-    crop_iframe = crop_roi(iframe, np.array([region_of_interest_vertices], np.int32))
-    gray = cv2.cvtColor(crop_iframe, cv2.COLOR_BGR2GRAY)
+    #crop_iframe = crop_roi(iframe, np.array([region_of_interest_vertices], np.int32))
+    gray = cv2.cvtColor(iframe, cv2.COLOR_BGR2GRAY)
 
     # smoothing
-    gray_filtered = cv2.bilateralFilter(gray, 7, 40, 40)
+    gray_filtered = cv2.bilateralFilter(gray, 7, 60, 60)
 
     # canny filter
-    edges_high_thresh = cv2.Canny(gray_filtered, 100, 200)
+    edges_high_thresh = cv2.Canny(gray_filtered, 130, 200)
     kernelS = 5
-    guas_image = cv2.GaussianBlur(edges_high_thresh, (kernelS, kernelS), 0.5)
+    guas_image = cv2.GaussianBlur(edges_high_thresh, (kernelS, kernelS), 1)
 
     rho = 7
     theta = np.pi/60
@@ -58,9 +58,9 @@ def bilateral_filtering(iframe):
     line_image = hough_lines(guas_image, rho, theta, threshold, min_line_len, max_line_gap)
     weighted = cv2.addWeighted(line_image, 1, iframe, 1, 0)
 
-    images = np.hstack((guas_image, edges_high_thresh))
+    images = np.hstack((gray, guas_image, edges_high_thresh))
     cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
-    cv2.imshow('Frame', weighted)
+    cv2.imshow('Frame', images)
 
 def crop_roi(iframe, vertices):
     mask = np.zeros_like(iframe)
@@ -73,29 +73,45 @@ def crop_roi(iframe, vertices):
 
 
 def mask_green(iframe):
-    gray = cv2.cvtColor(iframe, cv2.COLOR_BGR2GRAY)
+    region_of_interest_vertices = [
+        (0, iframe.shape[0]),
+        (iframe.shape[1] / 2, iframe.shape[0] / 5),
+        (iframe.shape[1], iframe.shape[0]),
+    ]
+    crop_iframe = crop_roi(iframe, np.array([region_of_interest_vertices], np.int32))
+
+    gray = cv2.cvtColor(crop_iframe, cv2.COLOR_BGR2GRAY)
 
     # smoothing
     gray_filtered = cv2.bilateralFilter(gray, 7, 50, 50)
 
     hsv = cv2.cvtColor(iframe, cv2.COLOR_BGR2HSV)
-    # lower_green = np.array([40,40,40], dtype = "uint8")
-    # upper_green = np.array([70,255,255], dtype = "uint8")
-    #
-    # mask_greenimg = cv2.inRange(hsv, lower_green, upper_green)
-    # mask_gr_image = cv2.bitwise_and(iframe, iframe, mask=mask_greenimg)
+    lower_green = np.array([17,20,20], dtype = "uint8")
+    upper_green = np.array([230,255,255], dtype = "uint8")
 
-    mask_white = cv2.inRange(gray, 200, 255)
-    mask_wh_image = cv2.bitwise_and(gray, gray, mask=mask_white)
+    mask_greenimg = cv2.inRange(hsv, lower_green, upper_green)
+    mask_gr_image = cv2.bitwise_and(gray_filtered, gray_filtered, mask=mask_greenimg)
+
     # gaussian
     kernelS = 3
-    guas_image = cv2.GaussianBlur(mask_wh_image, (kernelS, kernelS), cv2.BORDER_DEFAULT)
+    guas_image = cv2.GaussianBlur(mask_gr_image, (kernelS, kernelS), cv2.BORDER_DEFAULT)
+
     #canny
     canny_gaus = cv2.Canny(guas_image, 60, 120)
 
-    images = np.hstack((gray, canny_gaus, guas_image))
+    rho = 1
+    theta = np.pi / 180
+    # threshold is minimum number of intersections in a grid for candidate line to go to output
+    threshold = 50
+    min_line_len = 100
+
+    max_line_gap = 20
+    line_image = hough_lines(canny_gaus, rho, theta, threshold, min_line_len, max_line_gap)
+    weighted = cv2.addWeighted(line_image, 1, iframe, 1, 0)
+
+    images = np.hstack((gray,mask_greenimg, canny_gaus, guas_image))
     cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
-    cv2.imshow('Frame', images)
+    cv2.imshow('Frame', weighted)
 
 
 
