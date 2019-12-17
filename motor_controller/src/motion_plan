@@ -11,17 +11,9 @@ def callback(data):
     if not rospy.is_shutdown():
 	point = JointTrajectoryPoint()
 	dir = float(data.data)
-	#alpha = 0.75
-	#mov_avg = alpha * mov_avg + (1 - alpha) * dir
-	#ki = 1
 	y = 2
 	t_val = y - 0.25
 	t = 0
-	if dir < 0:
-	    t = -t_val
-        else:
-	    t = t_val
-	#print('inter is ' + str(inter))
         if inter == 1:
 	    t = 0
 	    y = 0
@@ -31,8 +23,6 @@ def callback(data):
 	    else:
 		t = t_val
 	    y = 2
-        #t = 2 * float(data.data)
-	#igl = ki * mov_avg
 	point.velocities = [y + t, y + t, -y + t, -y + t]
 	message = JointTrajectory()
 	message.joint_names = ['wheel_front_left_joint', 'wheel_back_left_joint','wheel_front_right_joint','wheel_back_right_joint']
