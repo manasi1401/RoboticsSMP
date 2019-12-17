@@ -8,12 +8,17 @@ from trajectory_msgs.msg import JointTrajectoryPoint
 def talker():
     pub = rospy.Publisher('/cmd_joint_traj', JointTrajectory, queue_size=10)
     rospy.init_node('run_single_motor_node', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
+    rate = rospy.Rate(1) # 10hz
+    i = 0
     while not rospy.is_shutdown():
+	i += 1
 	point = JointTrajectoryPoint()
-	point.velocities = [-1, 1]
+	if i % 3 == 0:
+	    point.velocities = [0, 0, 0, 0]
+	else:
+	    point.velocities = [-1, -1, 1, 1]
 	message = JointTrajectory()
-	message.joint_names = ['wheel_back_left_joint', 'wheel_front_left_joint']
+	message.joint_names = ['wheel_back_left_joint', 'wheel_front_left_joint','wheel_back_right_joint','wheel_front_right_joint']
 	message.points = [point]
         pub.publish(message)
         rate.sleep()

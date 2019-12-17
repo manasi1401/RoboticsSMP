@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+# license removed for brevity
+import rospy
+from std_msgs.msg import String
+from trajectory_msgs.msg import JointTrajectory
+from trajectory_msgs.msg import JointTrajectoryPoint
+from sensor_msgs.msg import Joy
+
+def callback(data):
+    global inter
+    if not rospy.is_shutdown():
+	point = JointTrajectoryPoint()
+	dir = float(data.data)
+	#alpha = 0.75
+	#mov_avg = alpha * mov_avg + (1 - alpha) * dir
+	#ki = 1
+	y = 2
+	t_val = y - 0.25
+	t = 0
+	if dir < 0:
+	    t = -t_val
+        else:
+	    t = t_val
+	#print('inter is ' + str(inter))
+        if inter == 1:
+	    t = 0
+	    y = 0
+	else:
+	    if dir < 0:
+		t = -t_val
+	    else:
+		t = t_val
+	    y = 2
+        #t = 2 * float(data.data)
+	#igl = ki * mov_avg
+	point.velocities = [y + t, y + t, -y + t, -y + t]
+	message = JointTrajectory()
+	message.joint_names = ['wheel_front_left_joint', 'wheel_back_left_joint','wheel_front_right_joint','wheel_back_right_joint']
+	message.points = [point]
+	pub.publish(message)
+
+def callback2(data):
+    global inter
+    print(data.data)
+    if data.data == 'stop':
+	inter = 1
+	print('inter = 1')
+    elif data.data == 'go':
+	inter = 0
+	print('inter = 0')
+
+def talker():
+    global pub
+    global inter
+    inter = 1
+    #global mov_avg = 0
+    pub = rospy.Publisher('/cmd_joint_traj', JointTrajectory, queue_size=10)
+    rospy.Subscriber("/dir", String, callback)
+    rospy.Subscriber("/stop", String, callback2)
+    rospy.init_node('motion_plan_node')
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        talker()
+    except rospy.ROSInterruptException:
+	pass

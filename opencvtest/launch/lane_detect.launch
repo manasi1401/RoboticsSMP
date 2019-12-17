@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="opencvtest" type="lane_detect" name="image_converter" output="screen">
+	</node>
+</launch>
+
